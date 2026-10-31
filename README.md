@@ -2,7 +2,6 @@
 
 **An interactive visualization of how incentives and changing conditions can influence AI model behaviour.**
 
-[**Explore the live visualization →**](https://thebeltlinenotch.vercel.app/)
 
 ## Overview
 
