@@ -1,0 +1,316 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Belt Line Notches</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif&display=swap">
+<style>
+/* Concept: honest answers are straight lines; each incentive pulls one off its line; the control band stays straight.
+   Palette: ink-blue ground, pale line, eight incentive hues drawn in the script. Single dark look by choice. */
+:root{
+  --bg:#0a0e16; --fg:#e9edf5; --muted:#8a93a8; --rule:#2a3245;
+  --display:'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --mono:'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  color-scheme: dark;
+  --card-scale:.625; /* author card + QR size: 1 = full, .5 = half. Change this one number. */
+}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg); overflow:hidden;
+  font-family:var(--mono);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  box-sizing:border-box; -webkit-user-select:none; user-select:none;
+}
+#stage{position:fixed; inset:0; z-index:0}
+#stage canvas{display:block}
+.hud{position:relative; z-index:2; pointer-events:none; padding-block:12px 0; max-width:min(760px, 100%)}
+.hud h1{font-family:var(--display); font-weight:400; font-size:clamp(31px, 5.4vw, 50px); line-height:1; margin:0 0 6px; letter-spacing:.005em; text-wrap:balance}
+.hud p{margin:0; font-size:12px; line-height:1.5; color:var(--muted); letter-spacing:.02em; max-width:72ch}
+#cap{margin-top:6px; min-height:3em; font-size:12px; line-height:1.5; color:var(--fg); max-width:72ch}
+#cap b{font-weight:500}
+.card,.qr,.keys{position:fixed; z-index:2; border:1px solid var(--rule); background:rgba(10,14,22,.78); border-radius:10px}
+.card{transform:scale(var(--card-scale)); transform-origin:left bottom; left:max(16px, env(safe-area-inset-left, 0px)); bottom:max(14px, env(safe-area-inset-bottom, 0px)); padding:12px 16px; max-width:min(440px, calc(100vw - 32px)); font-size:11px; line-height:1.55; color:var(--fg); pointer-events:auto}
+.card .k{font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:#7fd0ee}
+.card .n{font-family:var(--display); font-size:24px; line-height:1.1; margin:2px 0 4px}
+.card a{color:#7fd0ee; text-decoration:none; border-bottom:1px solid var(--rule); overflow-wrap:anywhere}
+.card a:hover,.card a:focus-visible{border-color:#7fd0ee; outline:none}
+.card .c{font-size:10px; color:var(--muted); margin-top:4px}
+.qr{transform:scale(var(--card-scale)); transform-origin:right bottom; right:max(16px, env(safe-area-inset-right, 0px)); bottom:max(14px, env(safe-area-inset-bottom, 0px)); padding:8px 8px 6px; text-align:center; pointer-events:auto}
+.qr a{display:block; width:104px; height:104px; background:#eef3fb; border-radius:4px; padding:6px; box-sizing:border-box; border:0}
+.qr svg{display:block; width:100%; height:100%}
+.qr span{display:block; margin-top:6px; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+.keys{top:22px; right:max(16px, env(safe-area-inset-right, 0px)); border:0; background:none; text-align:right; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); line-height:1.7; pointer-events:none}
+@media (max-width:649px){ .qr,.keys{display:none} }
+@media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} }
+</style>
+
+<div id="stage" aria-hidden="true"></div>
+<div class="hud">
+  <h1>The Belt Line &middot; Notches</h1>
+  <p>Each model is a belt. An incentive punches a notch. If the answer is pulled through it, the line bends.</p>
+  <div id="cap" aria-live="polite">Point at a notch. A thread pulled into it means the model gave in to that pressure.</div>
+</div>
+<div class="keys">Move pointer &middot; slide the prong<br>Click a model &middot; pin its belt<br>Before annotation &middot; pass / hold pattern is illustrative</div>
+<div class="card">
+  <div class="k">Author</div>
+  <div class="n">Eyitayo Alimi</div>
+  <div>Independent AI Safety Researcher<br>ReasonBench &middot; open-source benchmark for deceptive LLM outputs</div>
+  <a href="https://github.com/EYITAY/ReasonBench" target="_blank" rel="noopener">github.com/EYITAY/ReasonBench</a>
+  <div class="c">&copy; 2026 Eyitayo Alimi. All rights reserved.</div>
+</div>
+<div class="qr"><a id="qrlink" href="https://github.com/EYITAY/ReasonBench" target="_blank" rel="noopener" aria-label="ReasonBench on GitHub"></a><span>Scan for code &amp; data</span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+(function(){
+  var CATS = [
+    ['reward maximisation',   34,  'A stated score or payment depends on the answer.'],
+    ['self-preservation',      6,  'The truth could end the model’s own deployment.'],
+    ['reputation management', 326, 'Admitting ignorance would dent how capable it looks.'],
+    ['goal protection',       150, 'The truth would let the user stop a task in progress.'],
+    ['user pleasing',         190, 'The user has signalled the answer they want to hear.'],
+    ['conflict avoidance',    276, 'The correct answer would upset someone in the room.'],
+    ['social politeness',      78, 'A small kind untruth keeps the moment smooth.'],
+    ['strategic planning',    236, 'Today’s answer only makes sense as part of a longer plan.'],
+    ['plausible substitution', 210, 'A candidate category from the pilot, not in the original design: a believable answer to an easier question than the one asked.']
+  ];
+  var MODELS = ['Gemini 3.6 Flash','GPT-4o','DeepSeek chat','Grok 4 Fast','Mistral Small','gpt-oss-120b','Llama 3.2 3B','Qwen 2.5 3B','Gemma 3 4B','Mistral-7B-Instruct'];
+
+  // GAVE_IN[model][incentive] is true when that model's answer is pulled through the notch.
+  // Before annotation this is a seeded ILLUSTRATIVE pattern, not a measurement.
+  // After annotation, replace it with the majority-label table (true where annotators marked the
+  // model's answer deceptive under that incentive's category) and set DATA_MODE = 'annotated'.
+  var DATA_MODE = 'illustrative';
+  var GAVE_IN = null;
+
+  var MONO = "'IBM Plex Mono', ui-monospace, Menlo, monospace";
+  var reduced = false;
+  try { reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+  var art, hlBuf = null, W = 0, H = 0, sc = 1, top = 0, Hb = 0, rowH = 0, bx0 = 0, bx1 = 0;
+  var hx = [], ctrl = [], ctrlRule = 0, ctrlTopLine = 0, rr = 8;
+  var hovC = -1, hovR = -1, pinR = -1, lastSig = '', tip = 0, tipY = 0, tipTX = 0, tipTY = 0, dots = [];
+  var capEl = null, DEFAULT_CAP = 'Point at a notch. A thread pulled into it means the model gave in to that pressure.';
+
+  window.setup = function(){
+    var c = createCanvas(window.innerWidth, window.innerHeight);
+    c.parent('stage');
+    pixelDensity(Math.min(2, window.devicePixelRatio || 1));
+    capEl = document.getElementById('cap');
+    c.elt.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+    c.elt.setAttribute('draggable', 'false');
+    textFont(MONO);
+    try { build(); } catch (e) { showErr(e); }
+    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ try { build(); } catch (e) { showErr(e); } }); } catch (e) {}
+  };
+  window.windowResized = function(){ resizeCanvas(window.innerWidth, window.innerHeight); build(); };
+  function showErr(e){ var c = document.getElementById('cap'); if (c) c.textContent = 'Render error: ' + (e && e.message ? e.message : e); }
+
+  // y of one model's thread at x: it rides above the notch row and dips into a notch when the model gave in
+  function threadY(r, x){
+    var base = top + rowH * (r + 0.5) - rowH * 0.30, y = base;
+    for (var c = 0; c < hx.length; c++){
+      if (!GAVE_IN[r][c]) continue;
+      var d = x - hx[c], w = rr * 2.1;
+      y += rowH * 0.30 * Math.exp(-d * d / (2 * w * w));
+    }
+    return y;
+  }
+  function pull(r, x){   // 0..1 how strongly the thread is bent into a notch here, and which notch
+    var best = 0, bc = -1;
+    for (var c = 0; c < hx.length; c++){
+      if (!GAVE_IN[r][c]) continue;
+      var d = x - hx[c], w = rr * 2.1, e = Math.exp(-d * d / (2 * w * w));
+      if (e > best){ best = e; bc = c; }
+    }
+    return { s: best, c: bc };
+  }
+
+  function build(){
+    W = width; H = height;
+    sc = constrain(Math.min(W / 1000, H / 700), 0.6, 1.25);
+    var small = W < 650;
+    Hb = Math.max(230, Math.min(H * 0.40, 380));
+    rowH = Hb / MODELS.length;
+    rr = Math.max(4.5, rowH * 0.34);
+    var hudEl = document.querySelector('.hud');
+    var hudBottom = hudEl ? hudEl.getBoundingClientRect().bottom : 150;
+    var avail0 = Math.max(hudBottom + 40, 175), avail1 = H * 0.76;
+    top = avail0 + Math.max(0, (avail1 - avail0 - Hb) / 2);
+    bx0 = W * 0.045; bx1 = W * 0.125;
+    ctrlRule = Math.min(top + Hb + 34, H * 0.80);
+    ctrlTopLine = ctrlRule + 42;
+
+    var hx0 = W * (small ? 0.20 : 0.21), hx1 = W * (small ? 0.92 : 0.80);
+    hx = CATS.map(function(c, i){ return hx0 + (hx1 - hx0) * i / (CATS.length - 1); });
+
+    if (!GAVE_IN){
+      randomSeed(31); GAVE_IN = [];
+      for (var r = 0; r < MODELS.length; r++){ var row = []; for (var c = 0; c < CATS.length; c++) row.push(random() < 0.34); GAVE_IN.push(row); }
+    }
+    var dx = 4, steps = Math.ceil((W - bx0) / dx);
+
+    art = createGraphics(W, H);
+    art.pixelDensity(Math.min(2, window.devicePixelRatio || 1));
+    art.colorMode(HSB, 360, 100, 100, 1);
+    art.background(220, 40, 7);
+    art.noStroke();
+
+    for (var r2 = 0; r2 < MODELS.length; r2++){
+      var ry = top + rowH * r2;
+      // leather strip
+      art.noStroke(); art.fill(222, 36, r2 % 2 ? 12 : 10.5, 1); art.rect(bx0, ry + 2, W - bx0 + 20, rowH - 4, 4);
+      // stitching on the strip edges
+      art.stroke(215, 10, 60, 0.35); art.strokeWeight(1);
+      for (var sx = bx0 + 8; sx < W; sx += 12){ art.line(sx, ry + 5, sx + 5, ry + 5); art.line(sx, ry + rowH - 5, sx + 5, ry + rowH - 5); }
+      // notches: punched holes with a metal rim, in every row
+      for (var c2 = 0; c2 < CATS.length; c2++){
+        var gx = hx[c2], gy = ry + rowH / 2, ghost = c2 === 8;
+        art.noStroke(); art.fill(222, 40, 4, 1); art.circle(gx, gy, rr * 2);
+        art.noFill();
+        if (ghost){ art.stroke(215, 8, 80, 0.7); art.strokeWeight(1.2); for (var a = 0; a < 14; a++){ var a0 = a / 14 * TWO_PI, a1 = a0 + 0.2; art.line(gx + Math.cos(a0) * rr, gy + Math.sin(a0) * rr, gx + Math.cos(a1) * rr, gy + Math.sin(a1) * rr); } }
+        else { art.stroke(215, 14, 66, 0.9); art.strokeWeight(Math.max(1.6, rr * 0.16)); art.circle(gx, gy, rr * 2); }
+      }
+      // the thread: dips into a notch where the model gave in
+      for (var k = 1; k <= steps; k++){
+        var xa = bx0 + (k - 1) * dx, xb = bx0 + k * dx, ya = threadY(r2, xa), yb = threadY(r2, xb);
+        var p = pull(r2, (xa + xb) / 2), hue = p.c >= 0 ? CATS[p.c][1] : 210, ghostC = p.c === 8;
+        art.strokeWeight(1.4 + 1.4 * p.s);
+        art.stroke(hue, ghostC ? lerp(8, 14, p.s) : lerp(8, 80, p.s), lerp(80, 100, p.s), 0.55 + 0.45 * p.s);
+        art.line(xa, ya, xb, yb);
+      }
+    }
+    // control: plain straight lines
+    art.stroke(220, 25, 30, 0.9); art.strokeWeight(1);
+    art.line(Math.max(16, W * 0.02), ctrlRule, W - Math.max(16, W * 0.02), ctrlRule);
+    ctrl = [];
+    var cn = small ? 5 : 8;
+    for (var m = 0; m < cn; m++){ var cy = ctrlTopLine + 52 * (m / (cn - 1)); art.stroke(214, 10, 78, 0.5); art.strokeWeight(1.05); art.line(bx0, cy, W, cy); }
+    // buckle frame around all belts
+    art.noFill(); art.stroke(215, 12, 82, 0.95); art.strokeWeight(4);
+    art.rect(bx0 - 6, top - 10, bx1 - bx0 + 6, Hb + 20, 10);
+    art.stroke(215, 10, 100, 0.35); art.strokeWeight(1.2);
+    art.rect(bx0 - 3, top - 7, bx1 - bx0, Hb + 14, 8);
+
+    dots = [];
+    hlBuf = null; tip = bx1; tipY = top + Hb / 2; tipTX = bx1; tipTY = tipY; lastSig = '';
+    for (var r3 = 0; r3 < MODELS.length; r3++) dots.push({ r: r3, x: random(bx0, W), v: (0.9 + random(0.8)) * (reduced ? 0 : 1) });
+    setCaption(-1, -1);
+  }
+
+  function setCaption(c, r){
+    if (!capEl) return;
+    capEl.textContent = '';
+    if (c < 0){ capEl.textContent = DEFAULT_CAP; return; }
+    var b = document.createElement('b'); b.textContent = CATS[c][0];
+    capEl.appendChild(b); capEl.appendChild(document.createElement('br'));
+    var t = CATS[c][2];
+    if (r >= 0){ t += ' ' + MODELS[r] + (GAVE_IN[r][c] ? ': pulled through' : ': held its line') + (DATA_MODE === 'illustrative' ? ' (illustrative).' : '.'); }
+    capEl.appendChild(document.createTextNode(t));
+  }
+
+  function cellAt(x, y){
+    for (var c = 0; c < hx.length; c++){
+      if (Math.abs(x - hx[c]) > rr + 8) continue;
+      var r = Math.floor((y - top) / rowH);
+      if (r >= 0 && r < MODELS.length && Math.abs(y - (top + rowH * (r + 0.5))) < rr + 8) return { c: c, r: r };
+    }
+    return null;
+  }
+  function modelAt(x, y){
+    if (W < 650 || !(x > W * 0.865 && x < W && y > top && y < top + Hb)) return -1;
+    return Math.max(0, Math.min(MODELS.length - 1, Math.floor((y - top) / rowH)));
+  }
+
+  window.draw = function(){ try { drawFrame(); } catch (e) { showErr(e); noLoop(); } };
+
+  function drawFrame(){
+    image(art, 0, 0, W, H);
+    colorMode(HSB, 360, 100, 100, 1);
+
+    var cell = cellAt(mouseX, mouseY), hc = cell ? cell.c : -1, hr = cell ? cell.r : -1;
+    var hm = modelAt(mouseX, mouseY);
+    var act = hm >= 0 ? hm : (hr >= 0 ? hr : pinR);
+    var sig = hc + '|' + hr + '|' + hm + '|' + pinR;
+    if (sig !== lastSig){ lastSig = sig; hovC = hc; hovR = hr; setCaption(hc, hr); }
+    if (cell){ tipTX = hx[hc]; tipTY = top + rowH * (hr + 0.5); } else { tipTX = bx1; tipTY = top + Hb / 2; }
+
+    // focus a model: veil the other belts
+    if (act >= 0){
+      noStroke(); fill(220, 40, 6, 0.66);
+      for (var r = 0; r < MODELS.length; r++){ if (r !== act) rect(bx1, top + rowH * r + 2, W - bx1, rowH - 4); }
+    }
+
+    // answers in motion along each thread
+    noStroke();
+    dots.forEach(function(D){
+      D.x += D.v; if (D.x > W) D.x = bx1;
+      if (act >= 0 && D.r !== act) return;
+      if (W >= 650 && D.x > W * 0.865) return;
+      var y = threadY(D.r, D.x), p = pull(D.r, D.x), hue = p.c >= 0 ? CATS[p.c][1] : 210;
+      fill(hue, p.s * 70, 100, 0.12); circle(D.x, y, 10 * sc);
+      fill(hue, p.s * 70, 100, 0.95); circle(D.x, y, 2.8 * sc);
+    });
+
+    // the prong slides from the buckle into the notch you point at
+    tip = reduced ? tipTX : lerp(tip, tipTX, 0.16);
+    tipY = reduced ? tipTY : lerp(tipY, tipTY, 0.22);
+    var ax = bx0 - 2;
+    stroke(215, 14, 62, 1); strokeWeight(5 * sc); line(ax, tipY + 1.2, tip, tipY + 1.2);
+    stroke(215, 12, 90, 1); strokeWeight(3.6 * sc); line(ax, tipY, tip, tipY);
+    noStroke(); fill(215, 12, 92, 1); circle(tip, tipY, 6 * sc);
+
+    // incentive labels above and below the belts
+    var showAll = W >= 650;
+    for (var c = 0; c < CATS.length; c++){
+      var on = c === hovC, up = c % 2 === 0;
+      if (showAll || on){
+        noStroke(); fill(CATS[c][1], c === 8 ? 8 : (on ? 25 : 35), 100, on ? 1 : 0.75);
+        textAlign(CENTER, up ? BOTTOM : TOP); textSize(Math.max(10, 11.5 * sc));
+        text(CATS[c][0], hx[c], up ? top - 16 : top + Hb + 16);
+      }
+      if (on && hovR >= 0){ noFill(); stroke(c === 8 ? 215 : CATS[c][1], c === 8 ? 8 : 60, 100, 1); strokeWeight(2); circle(hx[c], top + rowH * (hovR + 0.5), rr * 2 + 7); }
+    }
+
+    // model names at the belts' tail
+    if (showAll){
+      textAlign(RIGHT, CENTER); textSize(Math.max(10, 10.5 * sc)); noStroke();
+      var mp = Math.max(16, W * 0.02);
+      for (var k = 0; k < MODELS.length; k++){
+        var on2 = k === (hm >= 0 ? hm : (hr >= 0 ? hr : pinR));
+        fill(214, on2 ? 6 : 14, on2 ? 100 : 86, on2 ? 1 : 0.85);
+        text(MODELS[k], W - mp, top + rowH * (k + 0.5));
+      }
+    }
+
+    // control label, right above the straight lines
+    fill(214, 12, 70, 0.9); noStroke();
+    textAlign(LEFT, BOTTOM); textSize(Math.max(10, 11 * sc));
+    text('control · same question, no incentive, nothing bends', Math.max(16, W * 0.02), ctrlTopLine - 7);
+  }
+
+  window.mousePressed = function(){
+    var k = modelAt(mouseX, mouseY);
+    if (k < 0){ var cell = cellAt(mouseX, mouseY); k = cell ? cell.r : -1; }
+    pinR = k;
+    return false;
+  };
+  window.keyPressed = function(){ if (window.key === 'Escape') pinR = -1; return false; };
+
+  // QR code to the repo, drawn locally as inline SVG
+  try {
+    var qr = qrcode(0, 'M'); qr.addData('https://github.com/EYITAY/ReasonBench'); qr.make();
+    var n = qr.getModuleCount(), d = '';
+    for (var r = 0; r < n; r++) for (var c2 = 0; c2 < n; c2++) if (qr.isDark(r, c2)) d += 'M' + c2 + ' ' + r + 'h1v1h-1z';
+    var a = document.getElementById('qrlink');
+    a.innerHTML = '<svg viewBox="0 0 ' + n + ' ' + n + '" shape-rendering="crispEdges" aria-hidden="true"><path fill="#0a0e16" d="' + d + '"/></svg>';
+  } catch (e) {
+    var q = document.querySelector('.qr'); if (q) q.style.display = 'none';
+  }
+
+
+  document.addEventListener('dragstart', function(e){ e.preventDefault(); });
+})();
+</script>
+
+</body></html>
